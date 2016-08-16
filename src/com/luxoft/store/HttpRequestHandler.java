@@ -1,5 +1,6 @@
 package com.luxoft.store;
 
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,6 +10,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -19,6 +23,8 @@ public class HttpRequestHandler implements HttpHandler {
 	Map<String, String> keys = new HashMap<>();
 	Map<String, Map<String, Integer>> store = new HashMap<>();
 	String response = "";
+	private Logger logB;
+	private Logger logger;
 	{
 		initialize();
 	}
@@ -30,35 +36,32 @@ public class HttpRequestHandler implements HttpHandler {
 		// Create a response form the request query parameters
 		URI uri = t.getRequestURI();
 		String[] arr = uri.toString().split("[/=]");
-		 System.out.println("Response: " + Arrays.toString(arr));
 
 		if (arr[2].equals("login"))
 			response = login(arr[1]);
 		else if (arr[2].equals("price")) {
 			isKeyvalid = validate(arr[5]);
-			System.out.println(arr[5]);
-			System.out.println(isKeyvalid);
 			if (isKeyvalid) {
 				Integer price = Integer.parseInt(arr[3]);
-				System.out.println(price);
+				logB = Logger.getLogger("LogB");
+				try {
+					
+					LogManager.getLogManager().readConfiguration(new FileInputStream("logger.properties"));
+				} catch (SecurityException e) {
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				} catch (IOException e) {
+					logger.log(Level.SEVERE, e.getMessage(), e);
+				}
+				logB.log(Level.INFO, "price of "+arr[1]+"="+price);
 				updatePrice(arr[5], arr[1], price);
-				System.out.println("after update");
 				response = "price updated";
 			}
 
 			else
 				response = "not valid key";
 		} else if (arr[2].equals("lowpriceslist")) {
-			//isKeyvalid = validate(arr[4]);
-			//if (isKeyvalid)
 				response = lowPricesList(arr[1]);
-
-			//else
-				//response = "not valid key";
 		}
-		// for(int i=0;i<arr.length;i++)
-
-		// System.out.println(arr[i]);
 
 		t.sendResponseHeaders(200, response.length());
 
@@ -82,7 +85,6 @@ public class HttpRequestHandler implements HttpHandler {
 	}
 
 	private String lowPricesList(String productId) {
-		// Map<String,String> prices = new HashMap<>();
 		String result = "";
 		for (String s : store.keySet()) {
 			result += s + "=";
@@ -101,7 +103,6 @@ public class HttpRequestHandler implements HttpHandler {
 			CSVWriter writer = new CSVWriter(new FileWriter("results.csv"));
 			System.out.println(result);
 			String[] results = result.split(",");
-			// System.out.println(Arrays.toString(results));
 			writer.writeNext(results);
 
 			writer.close();
@@ -115,7 +116,7 @@ public class HttpRequestHandler implements HttpHandler {
 		String storeId = getStoreId(sessionKey);
 		System.out.println("storeId"+storeId);
 		System.out.println(store.get(storeId));
-		Map<String,Integer>map=store.get(storeId);//.put(productId, price);
+		Map<String,Integer>map=store.get(storeId);
 		map.put(productId, price);
 
 	}
