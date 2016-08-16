@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -15,41 +16,45 @@ import com.sun.net.httpserver.HttpHandler;
 import au.com.bytecode.opencsv.CSVWriter;
 
 public class HttpRequestHandler implements HttpHandler {
-	Map<String,String> keys = new HashMap<>();
-	Map<String, Map<String,Integer>> store = new HashMap<>();
+	Map<String, String> keys = new HashMap<>();
+	Map<String, Map<String, Integer>> store = new HashMap<>();
 	String response = "";
 	{
 		initialize();
 	}
+
 	public void handle(HttpExchange t) throws IOException {
-		
+
 		boolean isKeyvalid = false;
 
 		// Create a response form the request query parameters
 		URI uri = t.getRequestURI();
 		String[] arr = uri.toString().split("[/=]");
-		// System.out.println("Response: " + arr[2]);
+		 System.out.println("Response: " + Arrays.toString(arr));
 
 		if (arr[2].equals("login"))
 			response = login(arr[1]);
 		else if (arr[2].equals("price")) {
-			isKeyvalid = validate(arr[4]);
+			isKeyvalid = validate(arr[5]);
+			System.out.println(arr[5]);
+			System.out.println(isKeyvalid);
 			if (isKeyvalid) {
-				Integer price=Integer.parseInt(arr[2]);
-				updatePrice(arr[4],arr[1], price);
+				Integer price = Integer.parseInt(arr[3]);
+				System.out.println(price);
+				updatePrice(arr[5], arr[1], price);
+				System.out.println("after update");
 				response = "price updated";
 			}
-		
-		else 
-			response="not valid key";
-		}
-		else if(arr[2].equals("lowpriceslist")){
-			isKeyvalid = validate(arr[4]);
-		if (isKeyvalid) 
-			response=lowPricesList(arr[1]);
-		
-		else 
-			response="not valid key";
+
+			else
+				response = "not valid key";
+		} else if (arr[2].equals("lowpriceslist")) {
+			//isKeyvalid = validate(arr[4]);
+			//if (isKeyvalid)
+				response = lowPricesList(arr[1]);
+
+			//else
+				//response = "not valid key";
 		}
 		// for(int i=0;i<arr.length;i++)
 
@@ -63,9 +68,9 @@ public class HttpRequestHandler implements HttpHandler {
 		os.close();
 	}
 
-	private  void initialize() {
-		Map<String,Integer>innerMap=new HashMap<>();
-		Map<String,Integer>innerMap2=new HashMap<>();
+	private void initialize() {
+		Map<String, Integer> innerMap = new HashMap<>();
+		Map<String, Integer> innerMap2 = new HashMap<>();
 		innerMap.put("1", 200);
 		innerMap.put("2", 500);
 		innerMap.put("3", 1000);
@@ -74,45 +79,44 @@ public class HttpRequestHandler implements HttpHandler {
 		innerMap2.put("2", 250);
 		store.put("2", innerMap2);
 
-		
 	}
 
 	private String lowPricesList(String productId) {
-		//Map<String,String> prices = new HashMap<>();
-		String result="";
-		for(String s:store.keySet()){
-			result+=s+"=";
-			result+=store.get(s).get(productId)+",";
+		// Map<String,String> prices = new HashMap<>();
+		String result = "";
+		for (String s : store.keySet()) {
+			result += s + "=";
+			result += store.get(s).get(productId) + ",";
 		}
+		System.out.println("result"+result);
 		save(result);
+		
 		return result;
 	}
 
 	private void save(String result) {
-		
+
 		System.out.println("in save ");
 		try {
 			CSVWriter writer = new CSVWriter(new FileWriter("results.csv"));
 			System.out.println(result);
-			String [] results = result.split("");
-
+			String[] results = result.split(",");
+			// System.out.println(Arrays.toString(results));
 			writer.writeNext(results);
 
 			writer.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-        
-        
-       
-		
 	}
 
-	private void updatePrice(String sessionKey,String productId, Integer price) {
-		String storeId=getStoreId(sessionKey);
-		store.get(storeId).put(productId,price);
+	private void updatePrice(String sessionKey, String productId, Integer price) {
+		String storeId = getStoreId(sessionKey);
+		System.out.println("storeId"+storeId);
+		System.out.println(store.get(storeId));
+		Map<String,Integer>map=store.get(storeId);//.put(productId, price);
+		map.put(productId, price);
 
 	}
 
@@ -121,8 +125,8 @@ public class HttpRequestHandler implements HttpHandler {
 	}
 
 	private boolean validate(String arr) {
-		Set<String> keySet=keys.keySet();
-		if (!keySet.contains(arr)) {			
+		Set<String> keySet = keys.keySet();
+		if (!keySet.contains(arr)) {
 			return false;
 		}
 		return true;
@@ -130,12 +134,13 @@ public class HttpRequestHandler implements HttpHandler {
 	}
 
 	String login(String storeId) {
+		System.out.println("in login storeId"+storeId);
 		final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 		SecureRandom rnd = new SecureRandom();
 		StringBuilder sb = new StringBuilder(5);
 		for (int i = 0; i < 5; i++)
 			sb.append(AB.charAt(rnd.nextInt(AB.length())));
-		keys.put(sb.toString(),storeId);
+		keys.put(sb.toString(), storeId);
 		return sb.toString();
 
 	}
