@@ -6,10 +6,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.security.SecureRandom;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -21,6 +24,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 public class HttpRequestHandler implements HttpHandler {
 	Map<String, String> keys = new HashMap<>();
+	Map<String, Long> seesionValidity = new HashMap<>();
 	Map<String, Map<String, Integer>> store = new HashMap<>();
 	String response = "";
 	private Logger logB;
@@ -86,10 +90,28 @@ public class HttpRequestHandler implements HttpHandler {
 
 	private String lowPricesList(String productId) {
 		String result = "";
-		for (String s : store.keySet()) {
-			result += s + "=";
-			result += store.get(s).get(productId) + ",";
+		int numberOfResults=0;
+		Properties properties=new Properties();
+        try {
+			properties.load(new FileInputStream("resources/config.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+        numberOfResults=Integer.parseInt(properties.getProperty("topReults"));
+    	Iterator<String> itr2 = store.keySet().iterator();
+        while(numberOfResults>0){
+        	
+        	    String key = itr2.next();
+        	    result += key + "=";
+    			result += store.get(key).get(productId) + ",";
+    			numberOfResults--;
+        	
+        }
+//		for (String s : store.keySet()) {
+//			result += s + "=";
+//			result += store.get(s).get(productId) + ",";
+//		}
 		System.out.println("result"+result);
 		save(result);
 		
@@ -97,10 +119,18 @@ public class HttpRequestHandler implements HttpHandler {
 	}
 
 	private void save(String result) {
-
+		String csvFileName="";
+		Properties properties=new Properties();
+        try {
+			properties.load(new FileInputStream("resources/config.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        csvFileName=properties.getProperty("csvName");
 		System.out.println("in save ");
 		try {
-			CSVWriter writer = new CSVWriter(new FileWriter("results.csv"));
+			CSVWriter writer = new CSVWriter(new FileWriter(csvFileName+".csv"));
 			System.out.println(result);
 			String[] results = result.split(",");
 			writer.writeNext(results);
@@ -127,7 +157,24 @@ public class HttpRequestHandler implements HttpHandler {
 
 	private boolean validate(String arr) {
 		Set<String> keySet = keys.keySet();
+		Date date=new Date();
+		int timeInMinutes=0;
+		long timeInMiliseconds=0;
+		//System.out.println(TimeUnit.MINUTES.toMillis(15));
+		Properties properties=new Properties();
+        try {
+			properties.load(new FileInputStream("resources/config.properties"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		timeInMinutes=Integer.parseInt(properties.getProperty("session"));
+        timeInMiliseconds=TimeUnit.MINUTES.toMillis(timeInMinutes);
 		if (!keySet.contains(arr)) {
+			return false;
+		}
+		if(date.getTime()-timeInMiliseconds>seesionValidity.get(arr)){
+			System.out.println("in validate");
 			return false;
 		}
 		return true;
@@ -135,13 +182,16 @@ public class HttpRequestHandler implements HttpHandler {
 	}
 
 	String login(String storeId) {
-		System.out.println("in login storeId"+storeId);
+		Date date=new Date();
+        
+		//System.out.println("in login storeId"+storeId);
 		final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 		SecureRandom rnd = new SecureRandom();
 		StringBuilder sb = new StringBuilder(5);
 		for (int i = 0; i < 5; i++)
 			sb.append(AB.charAt(rnd.nextInt(AB.length())));
 		keys.put(sb.toString(), storeId);
+		seesionValidity.put(sb.toString(),date.getTime());
 		return sb.toString();
 
 	}
