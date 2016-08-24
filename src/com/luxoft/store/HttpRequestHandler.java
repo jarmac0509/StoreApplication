@@ -222,7 +222,16 @@ public class HttpRequestHandler implements HttpHandler {
 					 if(currentTime-timeInMiliseconds>sessionStarted){
 						 seesionValidity.remove(sessionKey);
 						 keys.remove(sessionKey);
+						 
 					 }
+					 try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					 System.out.println(keys);
+					 System.out.println(seesionValidity);
 				}
 
 			}
