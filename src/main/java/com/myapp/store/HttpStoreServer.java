@@ -6,11 +6,11 @@ import java.net.InetSocketAddress;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-	public class StoreHttpServer {
+	public class HttpStoreServer {
 
 		private HttpServer httpServer;
 
-		public StoreHttpServer(int port, String context, HttpHandler handler) {
+		public HttpStoreServer(int port, String context, HttpHandler handler) {
 			try {
 				//Create HttpServer which is listening on the given port 
 				httpServer = HttpServer.create(new InetSocketAddress(port), 0);
