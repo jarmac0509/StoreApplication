@@ -1,4 +1,4 @@
-package com.luxoft.store;
+package com.myapp.store;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

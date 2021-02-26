@@ -1,27 +1,18 @@
-package com.luxoft.store;
+package com.myapp.store;
 
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStream;
+import au.com.bytecode.opencsv.CSVWriter;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+
+import java.io.*;
 import java.net.URI;
 import java.security.SecureRandom;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
-import au.com.bytecode.opencsv.CSVWriter;
 
 public class HttpRequestHandler implements HttpHandler {
 	Map<String, String> keys = new ConcurrentHashMap<>();
@@ -31,13 +22,18 @@ public class HttpRequestHandler implements HttpHandler {
 	private Logger logB;
 	private Logger logger;
 	{
+		InputStream config = HttpRequestHandler.class.getClassLoader().getResourceAsStream("config.properties");
+		Properties properties = new Properties();
+		try {
+			properties.load(config);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		initialize();
 	}
 
 	public void handle(HttpExchange t) throws IOException {
-
 		boolean isKeyvalid = false;
-
 		// Create a response form the request query parameters
 		URI uri = t.getRequestURI();
 		String[] arr = uri.toString().split("[/=]");
@@ -50,8 +46,9 @@ public class HttpRequestHandler implements HttpHandler {
 				Integer price = Integer.parseInt(arr[3]);
 				logB = Logger.getLogger("LogB");
 				try {
+					InputStream in = HttpServerTest.class.getClassLoader().getResourceAsStream("logger.properties");
 
-					LogManager.getLogManager().readConfiguration(new FileInputStream("logger.properties"));
+					LogManager.getLogManager().readConfiguration(in);
 				} catch (SecurityException e) {
 					logger.log(Level.SEVERE, e.getMessage(), e);
 				} catch (IOException e) {
@@ -61,15 +58,12 @@ public class HttpRequestHandler implements HttpHandler {
 				updatePrice(arr[5], arr[1], price);
 				response = "price updated";
 			}
-
 			else
 				response = "not valid key";
 		} else if (arr[2].equals("lowpriceslist")) {
 			response = lowPricesList(arr[1]);
 		}
-
 		t.sendResponseHeaders(200, response.length());
-
 		// Write the response string
 		OutputStream os = t.getResponseBody();
 		os.write(response.getBytes());
@@ -165,9 +159,10 @@ public class HttpRequestHandler implements HttpHandler {
 		int timeInMinutes = 0;
 		long timeInMiliseconds = 0;
 		// System.out.println(TimeUnit.MINUTES.toMillis(15));
+		InputStream in = HttpServerTest.class.getClassLoader().getResourceAsStream("config.properties");
 		Properties properties = new Properties();
 		try {
-			properties.load(new FileInputStream("resources/config.properties"));
+			properties.load(in);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -204,9 +199,11 @@ public class HttpRequestHandler implements HttpHandler {
 
 		@Override
 		public void run() {
+			InputStream in = HttpServerTest.class.getClassLoader().getResourceAsStream("config.properties");
+
 			Properties properties = new Properties();
 			try {
-				properties.load(new FileInputStream("resources/config.properties"));
+				properties.load(in);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
